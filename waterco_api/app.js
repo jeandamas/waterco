@@ -66,19 +66,31 @@ app.get("/users/all",function(req,res){
 });
 
 //request a specific user
-app.route("/users/find/:user_email")
-.get(function(req,res){
+app.get("/users/find/:userEmail",function(req,res){
     
- User.findOne({email:req.params.user_email},function(err,foundUser){
+ User.findOne({email:req.params.userEmail},function(err,foundUser){
         if(foundUser){
             res.send(foundUser);
         }else{
-            res.send("No user found with that email.")
+            res.send("No user found with that email.");
         }
-    })
+    });
+});
+//update the user
+app.put("/users/update/:userEmail",function(req,res){
+    User.update(
+        {email:req.params.userEmail},
+        {email:req.body.email, password:req.body.password},
+        {overwrite:true},
+        function(err){
+            if (!err) {
+                res.send("User updated successfully");
+            } else {
+                res.send("error");
+            }
+        }
+    );
 })
-
-
 
 // CLIENTS ////////////////////////////////////////////
 //clientSchema
@@ -104,7 +116,7 @@ app.post("/clients/new",function(req,res){
 });
 
 //request a client record
-app.route("article/find:clientEmail")
+app.route("/clients/find/:clientEmail")
 .get(function(req,res){
     Client.findOne({email:req.params.clientEmail},function(err,founfClient){
         if(founfClient){
@@ -126,6 +138,21 @@ app.get("/clients/all",function(req,res){
     });
 });
 
+//update client
+app.put("/clients/update/:clientEmail",function(req,res){
+    User.update(
+        {email:req.params.clientEmail},
+        {email:req.body.email,password:req.body.password},
+        {overwrite:true},
+        function(err){
+            if (!err) {
+                res.send("Successfuly updated client information")
+            } else {
+                res.send(err);
+            }
+        }
+    );
+});
 
 // PREMISES //////////////////////////////////////////////////////////
 //premiseSchema
@@ -161,15 +188,53 @@ app.get("/premises/all",function(req,res){
     });
 });
  
+//get a client premise
+app.route("/premises/find/:clientEmail")
+.get(function(req,res){
+    Premise.findOne({clientEmail:req.params.clientEmail},function(err,foundPremise){
+        if (foundPremise) {
+            res.send(foundPremise)
+        } else {
+            res.send("No premise with the client email you entered");
+        }
+    });
+})
+
+//update a premise
+app.get("/premises/update/:premiseNumber",function(req,res){
+    Premise.updateOne(
+        {premiseNo:req.params.premiseNumber},
+        {address:req.body,premiseNo:req.body.premiseNo,clientEmail:req.body.clientEmail},
+        {overwrite:true}
+    ),function(err){
+        if (!err) {
+            res.send("Successfuly updated premise");
+        } else {
+            res.send(err);
+        }
+    }
+})
+
+//View Premise
+app.route("/premises/:premiseNumber")
+.get(function(req,res){
+    Premise.findOne({clientEmail:req.params.clientEmail},function(err,foundPremise){
+        if (foundPremise) {
+            res.send(foundPremise)
+        } else {
+            res.send("No premise with the client email you entered");
+        }
+    });
+})
 
 // BILLS ///////////////////////////////////////////////////
 //billSchema
 const billSchema={
+    billNumber:String,
     units:Number,
     unitPrice:Number,
-    totalBill:Number,
-    premiseNo:String
-    
+    totalPrice:Number,
+    premiseNo:String 
 };
 const Bill = mongoose.model("Bill",billSchema);
 //get all bills
@@ -185,9 +250,10 @@ app.get("/bills/all",function(err,foundBills){
 //create a new bill
 app.post("/bills/new",function(req,res){
     const newBill = new Bill({
+        billNumber:req.body.billNumber,
         units:req.body.units,
         unitPrice:req.body.unitPrice,
-        totalBill: units*unitPrice,
+        totalPrice: units*unitPrice,
         premiseNo:req.body.premiseNo
     });
     newBill.save(function(err){
@@ -198,22 +264,36 @@ app.post("/bills/new",function(req,res){
         }
     })
 })
+//view bill
+app.get("/bills/:theBillNumber",function(req,res){
+    Bill.findOne(
+        {billNumber:req.params.theBillNumber},
+        function(err,foundBills){
+            if (foundBills) {
+                res.send(foundBills)
+            } else {
+                res.send("No bill match the number entered")
+            }
+        }
+    )
+})
+
 
 
 //Payments/////////////////////////////////////////////////////////
 //paymentSchema
 const paymentSchema={
     premiseNo:Number,
-    totalBill:Number,
-    paidAmount:Number
+    totalPrice:Number,
+    paidAmount:Number,
 }
 const Payment=mongoose.model("Payment",paymentSchema);
 
-//create new bill
+//create new payment
 app.post("/payments/new",function(req,res){
     const newPayment = new Payment({
         premiseNo: req.body.premiseNo,
-        totalBill: req.body.totalBill,
+        totalPrice: req.body.totalPrice,
         paidAmount: req.paidAmount
     });
     newPayment.save(function(err){
@@ -235,11 +315,6 @@ app.get("/payments/all",function(req,res){
         }
     });
 });
-
-
-
-
-
 
 // SERVER LISTENING PORT
 app.listen(3000,function(){
