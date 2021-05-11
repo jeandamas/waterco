@@ -264,7 +264,7 @@ app.post("/bills/new",function(req,res){
         }
     })
 })
-//view bill
+//view bill by bill number
 app.get("/bills/:theBillNumber",function(req,res){
     Bill.findOne(
         {billNumber:req.params.theBillNumber},
@@ -315,6 +315,20 @@ app.get("/payments/all",function(req,res){
         }
     });
 });
+
+//view payment by premise
+app.get("/payments/:premiseNumber",function(req,res){
+    Payment.findOne(
+        {premiseNo:req.params.premiseNumber},
+        function(err,foundPayments){
+            if (foundPayments) {
+                res.send(foundPayments)
+            } else {
+                res.send("No payment with provided premise Number");
+            }
+        }
+    )
+})
 
 // SERVER LISTENING PORT
 app.listen(3000,function(){
